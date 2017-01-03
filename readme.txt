@@ -1,5 +1,7 @@
 #SayNoToInfoPath with StratusForms! A lightweight InfoPath alternative for SharePoint 2007,2010,2013,2016, and Office 365
 
+<h2><a href="http://www.stratusforms.com/documentation/">DOCUMENTATION</a></h2>
+
 This work is licensed under a Creative Commons Attribution-NonCommercial 3.0 Unported License. 
 
 *********************** IMPORTANT NOTICE ABOUT LICENSING **************************************
