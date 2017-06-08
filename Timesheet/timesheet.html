@@ -3,8 +3,8 @@
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/jquery-ui.min.js"></script> 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.SPServices/0.7.2/jquery.SPServices-0.7.2.min.js"></script> 
 
-<script type="text/javascript" src="../SiteAssets/stratus-forms-1.2.js?rev=3"></script>
-<script type="text/javascript" src="../SiteAssets/stratus-forms-data-SPServices-1.2.js?rev=2"></script>
+<script type="text/javascript" src="../SiteAssets/stratus-forms-1.4.js?rev=3"></script>
+<script type="text/javascript" src="../SiteAssets/stratus-forms-data-SPServices-1.4.js"></script>
 
 <script type="text/javascript" src="../SiteAssets/Timesheet/timesheet.js"></script>
 <link  type="text/css" rel="stylesheet" href="../SiteAssets/TimeSheet/timesheet.css" /> 
@@ -31,9 +31,9 @@
 			<!-- the row below is the "container" of repeating content.  A repeating content container
 			     needs to have a uniquie ide and the attricute 'data-StratusFormsRepeatable="Y"' 
 				 all fields in that containser (row, div, cell, etc) will be repeated -->
-			<tr id="repeatingRow" data-StratusFormsRepeatable="Y" >
+			<tr id="repeatingRow" data-StratusFormsRepeatable="Y" data-StratusFormsChildList="Time">
 				<td><select id="projects" class="inputSelectSmall" data-StratusFormsLookup="{listName:'Projects',firstOption:'Select Project',fieldName:'Title'}"></select></td>				
-				<td><input class="inputClassSmall hours" id="mon" validate="validNumber" onkeyup="SumHours();"/></td>
+				<td><input listFieldName="monday" class="inputClassSmall hours" id="mon" validate="validNumber" onkeyup="SumHours();"/></td>
 				<td><input class="inputClassSmall hours" id="tues" onkeyup="SumHours();"/></td>
 				<td><input class="inputClassSmall hours" id="wed" onkeyup="SumHours();"/></td>
 				<td><input class="inputClassSmall hours" id="thurs" onkeyup="SumHours();"/></td>

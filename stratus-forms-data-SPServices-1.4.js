@@ -1,7 +1,7 @@
 /*
 /*
  * StratusForms Public SharePoint Data Layer - Store HTML forms in SharePoint lists using jQuery
- * Version 1.3 
+ * Version 1.4
  * @requires jQuery v1.4.2 or greater - jQuery 1.7+ recommended
  * @requires SPServices 
  * @requires StratusForms http://www.stratusforms.com
@@ -19,8 +19,6 @@
  * @author Mark Rackley / http://www.stratusforms.com  / info@stratusforms.com 
  */
 
-
-"use strict";
 
 
 $.fn.StratusFormsLoadDropDownList = function (element, curValue, webURL, query, listName, firstOptionText,
@@ -84,12 +82,16 @@ $.fn.StratusFormsLoadChildDropDownList = function (element, curValue, webURL, qu
 	                "</OrderBy>" +
 	            "</Query>";
     }
+    
+    console.dir(query);
 
     //The Web Service method we are calling, to read list items we use 'GetListItems'
     var method = "GetListItems";
     var fieldsToRead = "<ViewFields>" +
                             "<FieldRef Name='" + fieldName + "' />" +
                         "</ViewFields>";
+                        
+    console.dir(fieldsToRead);
 
     //Here is our SPServices Call where we pass in the variables that we set above
     $().SPServices({
@@ -127,7 +129,7 @@ $.fn.StratusFormsLoadChildDropDownList = function (element, curValue, webURL, qu
 
 }
 
-$.fn.StratusFormsLoadFormFields = function (form, id, listName, StratusFormsDataField) {
+$.fn.StratusFormsLoadFormFields = function (form, id, listName, StratusFormsDataField,listFieldsArray) {
     var defer = $.Deferred();
 
     var query = "<Query>" +
@@ -143,8 +145,13 @@ $.fn.StratusFormsLoadFormFields = function (form, id, listName, StratusFormsData
     var fieldsToRead = "<ViewFields>" +
                             "<FieldRef Name='" + StratusFormsDataField + "' />" +
                             "<FieldRef Name='Created' />" +
-                            "<FieldRef Name='Author' />" +
-                        "</ViewFields>";
+                            "<FieldRef Name='Author' />";
+                            
+	for(var index in listFieldsArray)
+	{
+		fieldsToRead += "<FieldRef Name='"+listFieldsArray[index]+"' />"
+	}                         
+    fieldsToRead += "</ViewFields>";
 
     //Here is our SPServices Call where we pass in the variables that we set above
     $().SPServices({
@@ -155,14 +162,20 @@ $.fn.StratusFormsLoadFormFields = function (form, id, listName, StratusFormsData
         CAMLQuery: query,
         //this basically means "do the following code when the call is complete"
         completefunc: function (xData, Status) {
+        
+        	var listFields = {};
 
             $(xData.responseXML).SPFilterNode("z:row").each(function () {
 
                 var value = ($(this).attr("ows_" + StratusFormsDataField));
                 var createdBy = ($(this).attr("ows_Author").split(";#")[1]);
                 var created = ($(this).attr("ows_Created"));
+               	for (var index in listFieldsArray)
+               	{
+               		listFields[listFieldsArray[index]] = ($(this).attr("ows_"+listFieldsArray[index]));
+               	}
 
-                defer.resolve(value, createdBy, created);
+                defer.resolve(value, createdBy, created,listFields);
 
             });
 
@@ -305,22 +318,16 @@ $.fn.StratusFormsGetLookupFieldValue = function (listName, fieldName, fieldValue
 
 }
 
-$.fn.StratusFormsSaveForm = function (listName, formID, StratusFormsValuePairs, saveCompleteFunc,StratusFormsChildListData) {
+$.fn.StratusFormsSaveForm = function (listName, formID, StratusFormsValuePairs, saveCompleteFunc,StratusFormsChildListData, UploadFiles) {
 
-    //	for(value in valuePairs)
-    //	{
-    //		thisField = valuePairs[value];
-    //		alert(thisField[0] + " - " + thisField[1]);
-    //	}
     var batchCommand = "New";
     var ID = 0;
     if (formID != undefined && formID != 0) {
         batchCommand = "Update";
         ID = formID;
     }
-
-	//alert(StratusFormsValuePairs);
-	//alert(ID);
+    
+    var defer = $.Deferred();
 
     $().SPServices({
         operation: "UpdateListItems",
@@ -340,33 +347,49 @@ $.fn.StratusFormsSaveForm = function (listName, formID, StratusFormsValuePairs, 
 	                alert("ValuePairs : " +  StratusFormsValuePairs);
 	                alert("ChildListData : " + StratusFormsChildListData);
                 }
-          
+          		defer.resolve();
                 return;
             }
             else if (Status == "Error") {
                 alert("Unable to communicate with Sharepoint Server!");
+                defer.resolve();
                 return;
             }
             //			alert(xData.responseXML.xml);
             var newId = $(xData.responseXML).SPFilterNode("z:row").attr("ows_ID");
-            for (var index in StratusFormsChildListData)
+            if (StratusFormsChildListData.length > 0)
+            	HandleChildListData(StratusFormsChildListData,listName,newId);
+            
+            var FilesToUpload = UploadFiles.length;
+            if (FilesToUpload == 0)
             {
-            	var valuePairs = StratusFormsChildListData[index].valuePairs;
-            	valuePairs.push([listName, newId]);
-            	StratusFormsChildListData[index].valuePairs = valuePairs;
-            	
-        	    $().StratusFormsGetChild(listName,newId,StratusFormsChildListData[index]);
-        	    
+	            if (saveCompleteFunc !== null) {
+	                saveCompleteFunc(newId);
+	            } 
+				defer.resolve();	                   			
             }
+            else {
+	        	for (index in UploadFiles)
+	        	{
+	        		var file = UploadFiles[index];
+	        		var call = $().StratusFormsUploadFile(file.file,file.listName,newId,file.lookupField);
+	        		call.done(function(options){
+	        			FilesToUpload--;
+	        			if (FilesToUpload <= 0)
+	        			{
+				            if (saveCompleteFunc !== null) {
+				                saveCompleteFunc(newId);
+				            }        			
+	        			}
+	        		});
+	        	}
+        	}
+        	
             
-            
-            if (saveCompleteFunc !== null) {
-                saveCompleteFunc(newId);
-            }
-            //			 SaveSuccessful(newId);
-
         }
     });
+    
+    return defer.promise();
 
 }
 
@@ -416,6 +439,72 @@ $.fn.StratusFormsGetChild = function (parentList, parentID, childObject) {
 
 }
 
+function HandleChildListData(StratusFormsChildListData, parentList, parentID) {
+
+var list = StratusFormsChildListData[0].list;
+
+
+  var query = "<Query>" +
+	                "<Where>" +
+	                    "<Eq>" +
+							"<FieldRef Name='" + parentList + "' LookupId='TRUE'/><Value Type='Lookup'>" + parentID + "</Value>" +
+	                    "</Eq>" +
+	                "</Where>" +
+	            "</Query>";
+
+    //The Web Service method we are calling, to read list items we use 'GetListItems'
+    var method = "GetListItems";
+    var fieldsToRead = "<ViewFields>" +
+                            "<FieldRef Name='ID' />" +
+                        "</ViewFields>";
+
+    var returnValue = 0;
+
+    //Here is our SPServices Call where we pass in the variables that we set above
+    $().SPServices({
+        operation: method,
+        async: false,  //if you set this to true, you may get faster performance, but your order may not be accurate.
+        listName: list,
+        CAMLViewFields: fieldsToRead,
+        CAMLQuery: query,
+        //this basically means "do the following code when the call is complete"
+        completefunc: function (xData, Status) {
+        	var id = 1;
+			var camlQuery = "<Batch OnError='Continue' >";
+			
+            $(xData.responseXML).SPFilterNode("z:row").each(function () {
+            
+		        camlQuery += "<Method ID='"+ id +"' Cmd='Delete'>" +
+				            "<Field Name='ID'>" + $(this).attr("ows_ID") + "</Field>" +
+				            "</Method>";
+				id++;
+            });
+
+            camlQuery += "</Batch>";
+			 
+			$().SPServices({
+			    operation: "UpdateListItems",
+			    async: false,
+			    listName: list,
+			    updates: camlQuery,
+			    completefunc: function (xData, Status) {
+			        for (var index = 0; index < StratusFormsChildListData.length; index++)
+		            {
+		            	var valuePairs = StratusFormsChildListData[index].valuePairs;
+		            	valuePairs.push([parentList, parentID]);
+		            	StratusFormsChildListData[index].valuePairs = valuePairs;
+		            	
+		        	    $().StratusFormsGetChild(parentList,parentID,StratusFormsChildListData[index]);
+		        	    
+		            }
+				
+				}
+			});
+
+        }
+    });
+
+}
 
 
 $.fn.StratusFormsAddUserToPeoplePicker = function (options) {
@@ -444,7 +533,7 @@ $.fn.StratusFormsAddUserToPeoplePicker = function (options) {
 
 };
 
-$.fn.StratusFormsAddCurrentUserToPeoplePicker = function (options) {
+$.fn.StratusFormsAddCurrentUserToPeoplePicker = function (userid) {
     var $this = this;
 
 
@@ -458,8 +547,8 @@ $.fn.StratusFormsAddCurrentUserToPeoplePicker = function (options) {
         peopleArray.push(people[index].DisplayText);
     }
 
-
-    var userid = _spPageContextInfo.userId;
+	if (userid == undefined)
+    	userid = _spPageContextInfo.userId;
 
     var requestUri = _spPageContextInfo.webAbsoluteUrl + "/_api/web/getuserbyid(" + userid + ")";
 
@@ -489,6 +578,40 @@ $.fn.StratusFormsAddCurrentUserToPeoplePicker = function (options) {
 
 };
 
+function GetUserEmail(emailOrID,name)
+{
+       var defer = $.Deferred();
+       
+        if ($.isNumeric(emailOrID))
+        {
+		    var requestUri = _spPageContextInfo.webAbsoluteUrl + "/_api/web/getuserbyid(" + emailOrID + ")";
+		
+		    var requestHeaders = { "accept": "application/json;odata=verbose" };
+		
+		    $.ajax({
+		        url: requestUri,
+		        contentType: "application/json;odata=verbose",
+		        headers: requestHeaders,
+		        success: onSuccess,
+		        error: onError
+		    });
+		
+		    function onSuccess(data, request) {
+		        defer.resolve(data.d.Email,name);
+		    }
+		
+		    function onError(error) {
+		        defer.resolve(null);
+		    }
+        }
+        else
+        {
+	        defer.resolve(emailOrID,name);
+
+        }
+        
+    	return defer.promise();
+}
 
 $.fn.StratusFormsGetPeopleFromPeoplePicker = function (element) {
     var spPP = SPClientPeoplePicker.SPClientPeoplePickerDict[$(element).attr("id") + "_TopSpan"];
@@ -506,8 +629,6 @@ $.fn.StratusFormsPeoplePicker = function (options) {
     }, options);
     var $this = this;
 
-
-
     // Create a schema to store picker properties, and set the properties.
     var schema = {};
     schema['PrincipalAccountType'] = 'User,DL,SecGroup,SPGroup';
@@ -518,28 +639,167 @@ $.fn.StratusFormsPeoplePicker = function (options) {
     schema['Width'] = ($($this).width() * 1 - 25) + "px";
 
     var users = new Array();
+    
+    var peoplePicker = $(this).attr("ID");
 
     if (opt.people != undefined) {
-
+		var count = opt.people.length;
         for (var index = 0; index < opt.people.length; index += 2) {
-            var email = opt.people[index];
-            var name = opt.people[index + 1];
-            var user = new Object();
-            user.AutoFillDisplayText = name;
-            user.AutoFillKey = email;
-            user.Description = email;
-            user.DisplayText = name;
-            user.EntityType = "User";
-            user.IsResolved = true;
-            //				user.Key = user.get_loginName();  
-            user.Resolved = true;
-
-            users.push(user);
+       		var idOrEmail = opt.people[index];
+       		var name = opt.people[index+1]; 	
+	       var call = GetUserEmail(idOrEmail,name);
+		   call.done(function(email,name){
+				var user = new Object();
+	            user.AutoFillDisplayText = name;
+	            user.AutoFillKey = email;
+	            user.Description = email;
+	            user.DisplayText = name;
+	            user.EntityType = "User";
+	            user.IsResolved = true;
+	            //				user.Key = user.get_loginName();  
+	            user.Resolved = true;
+	
+	            users.push(user);
+	            count -= 2;
+	            if (count == 0)
+	            {
+				    // Render and initialize the picker. 
+				    // Pass the ID of the DOM element that contains the picker, an array of initial
+				    // PickerEntity objects to set the picker value, and a schema that defines
+				    // picker properties.
+				    SPClientPeoplePicker_InitStandaloneControlWrapper(peoplePicker, users, schema);
+	            }
+				
+			});
         }
+       
+    } else {
+	    // Render and initialize the picker. 
+	    // Pass the ID of the DOM element that contains the picker, an array of initial
+	    // PickerEntity objects to set the picker value, and a schema that defines
+	    // picker properties.
+	    SPClientPeoplePicker_InitStandaloneControlWrapper(peoplePicker, users, schema);
     }
-    // Render and initialize the picker. 
-    // Pass the ID of the DOM element that contains the picker, an array of initial
-    // PickerEntity objects to set the picker value, and a schema that defines
-    // picker properties.
-    SPClientPeoplePicker_InitStandaloneControlWrapper($(this).attr("ID"), users, schema);
 };
+
+
+$.fn.StratusFormsUploadFile =  function (file,libraryName,id,fieldName) {
+
+
+  var defer = $.Deferred();
+    
+  
+       var digest = jQuery("#__REQUESTDIGEST").val();
+       var webUrl = _spPageContextInfo.webAbsoluteUrl;
+  
+       var reader = new FileReader();
+       var arrayBuffer;
+ 
+         reader.onload = function (e) {
+             arrayBuffer = reader.result;
+  
+             var url = webUrl + "/_api/web/lists/getByTitle(@TargetLibrary)/RootFolder/files/add(url=@TargetFileName,overwrite='false')?$expand=ListItemAllFields&" +
+                "@TargetLibrary='" + libraryName + "'" +
+                "&@TargetFileName='" + file.name + "'";
+  
+             var call = jQuery.ajax({
+            url: url,
+           type: "POST",
+           data: arrayBuffer,
+         headers: {
+                 "Accept": "application/json; odata=verbose",
+                 "X-RequestDigest": digest
+                 },    
+	     contentType: "application/json;odata=verbose",
+	     processData: false
+	    });  
+	    
+	    call.done(function (data, textStatus, jqXHR) {
+				var StratusFormsValuePairs = new Array();
+				StratusFormsValuePairs.push([fieldName, id])
+				var updateCall = $().StratusFormsSaveForm(libraryName, data.d.ListItemAllFields.Id, StratusFormsValuePairs, null,new Array(),new Array());
+	     		updateCall.done(function (data, textStatus, jqXHR) {
+		           defer.resolve(1);
+	     		});
+	     		updateCall.fail(function (data, textStatus, jqXHR) {
+		           defer.resolve(1);
+	     		});
+	    });
+          call.fail(function (jqXHR, textStatus, errorThrown) {
+             alert("Error Uploading Document. Ensure the file doesn't already exist: " + errorThrown);
+             defer.resolve(1);
+          });
+    
+        };
+        reader.readAsArrayBuffer(file);
+       
+//       defer.resolve(0);
+       
+       return defer.promise();
+
+
+ };
+
+$.fn.StratusFormsDeleteFile = function(libraryName,id)
+{
+    var call = jQuery.ajax({
+            url: _spPageContextInfo.webAbsoluteUrl + "/_api/Web/Lists/getByTitle('"+libraryName+"')/Items(" +
+                id + ")",
+            type: "POST",
+            headers: {
+                Accept: "application/json;odata=verbose",
+                "Content-Type": "application/json;odata=verbose",
+                "X-RequestDigest": jQuery("#__REQUESTDIGEST").val(),
+                "IF-MATCH": "*",
+                "X-Http-Method": "DELETE"
+            }
+        });
+      call.done(function (data, textStatus, jqXHR) {
+	    });
+          call.fail(function (jqXHR, textStatus, errorThrown) {
+             alert("Error Deleting File. " + errorThrown);
+             defer.resolve(1);
+          });        
+
+}
+
+$.fn.StratusFormsLoadFiles = function (libraryName, fieldName, id, ul) {
+    var query = "<Query>" +
+                    "<Where>" +
+	                    "<Eq>" +
+	                        "<FieldRef Name='" + fieldName + "' LookupId='TRUE'/><Value Type='Lookup'>" + id + "</Value>" +
+//	                        "<FieldRef Name='ID'/><Value Type='Integer'>0</Value>" +
+	                    "</Eq>" +
+                    "</Where>" +
+                "</Query>";
+
+    //The Web Service method we are calling, to read list items we use 'GetListItems'
+    var method = "GetListItems";
+    var fieldsToRead = "<ViewFields>" +
+                            "<FieldRef Name='FileLeafRef' />" +
+                        "</ViewFields>";
+
+    //Here is our SPServices Call where we pass in the variables that we set above
+    $().SPServices({
+        operation: method,
+        async: false,  //if you set this to true, you may get faster performance, but your order may not be accurate.
+        listName: libraryName,
+        CAMLViewFields: fieldsToRead,
+        CAMLQuery: query,
+        //this basically means "do the following code when the call is complete"
+        completefunc: function (xData, Status) {
+
+			var files="";
+            $(xData.responseXML).SPFilterNode("z:row").each(function () {
+
+                var file  = ($(this).attr("ows_FileLeafRef").split(";#")[1]);
+                var path  = ($(this).attr("ows_FileRef").split(";#")[1]);
+				files += "<li libraryName='"+libraryName+"' id='"+$(this).attr("ows_ID")+"'><a href='/"+path+"'>"+file+"</a> <span class='SFRemoveFile' onclick='$().StratusFormsRemoveFile(this);'>(remove)</span><img width='75px' src='/"+path+"'></li>";
+
+            });
+            $("#"+ul).append(files);
+
+        }
+    });
+}
+

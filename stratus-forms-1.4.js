@@ -1,7 +1,7 @@
 /*
 /*
  * StratusForms - Store HTML forms in SharePoint lists using jQuery
- * Version 1.3  
+ * Version 1.4
  * @requires jQuery v1.4.2 or greater - jQuery 1.10+ recommended
  * 
  *
@@ -28,6 +28,7 @@
     var gStratusFormsDecryptFailed = false;
     var gStratusFormsChildListData = new Array();
     var gStratusFormsDebug = false;
+    var gStratusFormsFiles = new Array();
     
     $.fn.StratusFormsLight = function (options)
     {
@@ -38,7 +39,7 @@
         
         $(".ms-formtable").hide();
         
-    	  //loop through all the spans in the custom layout        
+    	//loop through all the spans in the custom layout        
         $("span.StratusFormsTemplate").each(function()
         {
             //get the display name from the custom layout
@@ -53,7 +54,6 @@
 			{
 				fieldType = "FieldInternalName";
 			}
-
             $("table.ms-formtable td").each(function(){
                 if (this.innerHTML.indexOf(fieldType + '="'+formField +'"') != -1){
                 	var thisRow = $(this).closest("tr");
@@ -69,6 +69,11 @@
 
     };
 
+	$.fn.SetStratusFormsDebug = function(value)
+	{
+		gStratusFormsDebug = value;
+	}
+
 	$.fn.GetStratusFormsDebug = function()
 	{
 		return gStratusFormsDebug;
@@ -81,55 +86,102 @@
             queryStringVar: "ID",
             StratusFormsDataField: "StratusFormsData",
             listName: "",
+            htmlForm: null,
             addRequiredFields: true,
             completefunc: null
         }, options);
 
+        if (opt.htmlForm != null)
+        {
+            $(this).load(opt.htmlForm, function() {
+                $(this).StratusFormsInitialize({
+                    listID: opt.listID,
+                    queryStringVar: opt.queryStringVar,
+                    StratusFormsDataField: opt.StratusFormsDataField,
+                    listName: opt.listName,
+                    addRequiredFields: opt.addRequiredFields,
+                    completefunc: opt.completefunc
+                });
+            });
+        }
+        else{
+            return this.each(function () {
 
-        return this.each(function () {
+                if ($(this).hasClass(gStratusFormsEncryptClass)) {
+                    gStratusFormsEncrptForm = true;
+                }
 
-            if ($(this).hasClass(gStratusFormsEncryptClass)) {
-                gStratusFormsEncrptForm = true;
-            }
+                var listID = opt.listID;
+
+                if (listID == 0) {
+                    listID = getParameterByName(opt.queryStringVar);
+                }
+                //store in global var for save
+                gStratusFormsFormID = listID;
+                
+                if (listID != undefined) {
+
+                    var listFieldsArray = new Array();
+                    $(this).find("[ListFieldName]").each(function()
+                    {
+                        listFieldsArray.push($(this).attr("ListFieldName"));
+                    });
+                    var load = LoadFormFields(this, listID, opt.listName, opt.StratusFormsDataField,listFieldsArray);
+                    load.done(function(){
+                            $("textarea[data-StratusFormsType='Signature'").each(function () {
+                            var canvasID = $(this).attr("id")+'canvas';
+                            $(this).after('<canvas style="border:thin black solid;" id="'+canvasID+'" width="'+$(this).attr("width")+'" height="'+$(this).attr("height")+'"></canvas>');
+                            $('#'+canvasID).sketch();
+                            var imageText = $(this).val();
+                            $(this).hide();
+                            DrawSignature(imageText,canvasID);
+                        });    
+                        opt.completefunc();
+                   });
+                    
+                } else {
+                    
+                    $("div[data-StratusFormsType='PeoplePicker']").each(function () {
+                        $(this).StratusFormsPeoplePicker();
+                    });
+                
+                    $("select").each(function()
+                    {
+                        if ($(this).attr("data-StratusFormsLookup") != undefined )
+                        {
+                            eval("var lookupInfo=" + $(this).attr("data-StratusFormsLookup"));
+                            $(this).StratusFormsLoadDDL ({
+                                        listName: lookupInfo.listName,	
+                                        orderByField: lookupInfo.orderByField,
+                                        firstOptionText: lookupInfo.firstOption,
+                                        fieldName: lookupInfo.fieldName
+                            });
+                        }
+        
+                    });
+
+                    $("textarea[data-StratusFormsType='Signature'").each(function () {
+                        $(this).after('<canvas style="border:thin black solid;" id="'+$(this).attr("id")+'canvas" width="'+$(this).attr("width")+'" height="'+$(this).attr("height")+'"></canvas>');
+                        $('#'+$(this).attr("id")+'canvas').sketch();
+                        $(this).hide();
+                    });
+                    opt.completefunc();
+                }
+
+                $("div[data-StratusFormsType='File'").each(function () {
+                    $(this).StratusFileHandler ();
+
+                });
 
 
+                if (opt.addRequiredFields)
+                    AddRequiredFields(this);
 
-            var listID = opt.listID;
+                
 
-            if (listID == 0) {
-                listID = getParameterByName(opt.queryStringVar);
-            }
-            //store in global var for save
-            gStratusFormsFormID = listID;
-			
-            if (listID != undefined) {
-                LoadFormFields(this, listID, opt.listName, opt.completefunc, opt.StratusFormsDataField);
-            } else {
-	            
-	            $("div[data-StratusFormsType='PeoplePicker']").each(function () {
-	                $(this).StratusFormsPeoplePicker();
-	            });
-            
-            
-	            $("select").each(function()
-	            {
-	            	if ($(this).attr("data-StratusFormsLookup") != undefined )
-	        		{
-	        			 eval("var lookupInfo=" + $(this).attr("data-StratusFormsLookup"));
-	        			 $(this).StratusFormsLoadDDL ({
-									listName: lookupInfo.listName,	
-									firstOptionText: lookupInfo.firstOption,
-									fieldName: lookupInfo.fieldName
-						});
-	        		}
-	
-	            });
-            }
+            });
+        }
 
-            if (opt.addRequiredFields)
-                AddRequiredFields(this);
-
-        });
 
     };
 
@@ -139,6 +191,53 @@
         var match = location.search.match(new RegExp("[?&]" + key + "=([^&]+)(&|$)"));
         return match && decodeURIComponent(match[1].replace(/\+/g, " "));
     }
+    
+    $.fn.StratusFileHandler = function () {
+        eval("var fileOptions=" + $(this).attr("data-StratusFormsFileOptions"));
+        if (fileOptions.displayOnly == undefined || !fileOptions.displayOnly)
+        {
+        	$(this).append('<input type="file" multiple="multiple" name="file" class="SFDontSave" id="'+$(this).attr("ID")+'-SFfiles" class="inputfile" size="40" />');
+        }
+        $(this).append('<ul class="SFFileList" id="'+$(this).attr("ID")+'-SFfilesList"></ul>');
+        if (gStratusFormsFormID != 0)
+        {
+	        $().StratusFormsLoadFiles(fileOptions.libraryName, fileOptions.lookupField, gStratusFormsFormID, $(this).attr("ID")+'-SFfilesList')
+	    }
+        
+
+		$('#'+$(this).attr("ID")+'-SFfiles').change(function()
+		{			
+			eval("var fileOptions=" + $(this).closest("div[data-StratusFormsType='File']").attr("data-StratusFormsFileOptions"));
+			for (i = 0; i < $(this)[0].files.length; i++) { 
+				var fileName = $(this)[0].files[i].name;
+				gStratusFormsFiles.push({file:$(this)[0].files[i],listName:fileOptions.libraryName,lookupField:fileOptions.lookupField,fileName:fileName});
+				$('#'+$(this).attr("ID")+'List').append("<li id='0'>"+fileName+" <span class='SFRemoveFile' onclick='$().StratusFormsRemoveFile(this);'>(remove)</span></li>");
+			   
+			}
+			$(this).val("");
+		});
+	}
+	
+    $.fn.StratusFormsRemoveFile= function (span) {
+        var parent = $(span).parent();
+        var id = $(parent).attr("id")
+        $(parent).find("span").remove();
+        var fileName = $.trim($(parent).text());
+        for(var x = 0; x < gStratusFormsFiles.length; x++)
+        {
+            if(gStratusFormsFiles[x].fileName == fileName)
+            {
+                gStratusFormsFiles.splice(x,1);
+                break;
+            }
+        }
+        if(id != "0")
+        {
+            $().StratusFormsDeleteFile($(parent).attr("libraryName"),id);
+        }                
+    	$(parent).remove();
+    }
+	
     //utility function to load a drop down list with values from a SharePOint List
     $.fn.StratusFormsLoadDDL = function (options) {
 
@@ -473,11 +572,13 @@
     }
 
     //loads an existing form and populates the forms fields
-    function LoadFormFields(form, id, listName, completefunc, StratusFormsDataField) {
+    function LoadFormFields(form, id, listName, StratusFormsDataField,listFieldsArray) {
 
-        var promise = $().StratusFormsLoadFormFields(form, id, listName, StratusFormsDataField);
+        var defer = $.Deferred();
 
-        promise.done(function (value, createdBy, created) {
+        var promise = $().StratusFormsLoadFormFields(form, id, listName, StratusFormsDataField,listFieldsArray);
+
+        promise.done(function (value, createdBy, created, listFields) {
             value = Decrypt(value);
             if (!gStratusFormsDecryptFailed) {
 //                var regex = new RegExp("\r", "g");
@@ -491,20 +592,20 @@
                 $("#CreatedBy").html(createdBy);
                 $("#CreatedDate").html(created);
 
-                PopulateFormData(form, formData);
+                PopulateFormData(form, formData, listFields);
 
             }
 
-            if (completefunc !== null) {
-                completefunc();
-            }
+            defer.resolve();
 
         });
+        return defer.promise();
+
     }
 
     //iterates over the html form elements and populates with 
     //data read from the SharePoint List
-    function PopulateFormData(form, formData) {
+    function PopulateFormData(form, formData,listFields) {
         for (var field in formData) {
             var element = $(form).find("#" + field);
 
@@ -515,63 +616,98 @@
                         $().StratusFormsRepeat(repeatableArray[index].StratusFormsParent);
                     }
                     var thisRepeatableForm = $(form).find("#" + repeatableArray[index].ID);
-                    PopulateFormData(thisRepeatableForm, repeatableArray[index]);
+                    PopulateFormData(thisRepeatableForm, repeatableArray[index],{});
                 }
             }
 
             else if ($(element).is("select")) {
-            	$(element).val(formData[field]);
-            	if ($(element).val() != formData[field])
+            	var value = listFields[$(element).attr("ListFieldName")];
+            	if (value == undefined)
             	{
+            		value = formData[field];
+            	}
+                var valueArray = value.split(";#");
+            	
+                //$(element).val(value);
+
         		if ($(element).attr("data-StratusFormsLookup") != undefined )
         		{
         			 eval("var lookupInfo=" + $(element).attr("data-StratusFormsLookup"));
         			 var thisLookup = $(element);
-        			 var selectValue = formData[field];
+        			 var selectValue = value;
         			 $(element).StratusFormsLoadDDL ({
 									listName: lookupInfo.listName,	
 									firstOptionText: lookupInfo.firstOption,
+                                    orderByField: lookupInfo.orderByField,
 									fieldName: lookupInfo.fieldName,
 									selValue: selectValue,
 								    completefunc: function(elem,selValue) { 
-										$(elem).find("option").each(function(){									
-											if(($(this).text()) === selValue)
-											{
-												$(elem).val($(this).val());
-												return;
-											}
-										});
+                                        var valArray = new Array();
+                                            $.each(selValue.split(";#"), function(i,e){
+
+                                            $(elem).find("option").each(function(){		
+                                                if(($(this).text()) === e)
+                                                {
+                                                    valArray.push($(this).val());
+                                                    $(elem).after("<li class='SFSelectedOption' style='display:none'>" + e + " </li>");
+                                                    return;
+                                                }
+                                            });
+                                        });
+                                        if($(elem).attr("multiple") != undefined)
+                                            $(elem).val(valArray);
+                                        else
+                                            $(elem).val(valArray[0]);
 									}
 
 						});
 	        		}
-	                
-	            }
 	            else {
-	            	$(element).append("<option selected='selected'>" + formData[field] + "</option>");
+                
+                    $.each(value.split(";#"), function(i,e){
+                        $(element).find(" option[value='" + e + "']").prop("selected", true);
+                        $(element).after("<li class='SFSelectedOption' style='display:none'>" + e + " </li>");
+
+                    });
+                    if($(element).find('option').size() == 0)
+                    {
+                        $.each(value.split(";#"), function(i,e){
+                            $(element).append("<option selected='selected'>" + e + "</option>");  
+                        });
+                    } 
 	            }
             }
             else if ($(element).is("div") || $(element).is("span")) {
+            	var value = listFields[$(element).attr("ListFieldName")];
+            	if (value == undefined)
+            	{
+            		value = formData[field];
+            	}
+
                 if ($(element).attr("data-StratusFormsType") != undefined && $(element).attr("data-StratusFormsType") == "PeoplePicker") {
 	                $(element).StratusFormsPeoplePicker();
-                    
                     //set value in Person or Group Field
-                    if (formData[field].length > 0) {
-                        var people = htmlDecode(formData[field]).split(";#");
+                    if (value.length > 0) {
+                        var people = htmlDecode(value).split(";#");
                         $(element).StratusFormsPeoplePicker({ people: people });
                     }
 
                 } else {
-                    $(element).html(htmlDecode(formData[field]));
+                    $(element).html(htmlDecode(value));
                 }
             }
             else {
+				var value = listFields[$(element).attr("ListFieldName")];
+            	if (value == undefined)
+            	{
+                    var regex = new RegExp("<br>", "g");
+            		value = formData[field].replace(regex, "\n");            	
+                }
+            
                 if ($(element).attr("type") == "radio" || $(element).attr("type") == "checkbox") {
                     $(element).attr("checked", "checked");
                 }
                 else {
-                    var regex = new RegExp("<br>", "g");
-                	var value = formData[field].replace(regex, "\n");
                     $(element).val(htmlDecode(value, element));
                 }
             }
@@ -590,8 +726,7 @@
     }
 
     function CDataWrap(value) {
-        //return "<![CDATA[" + value + "]]>";
-        return value;
+        return "<![CDATA[" + value + "]]>";
     }
 
     function buildStratusFormsDataObject(formElement,StratusFormsValuePairs) {
@@ -637,7 +772,7 @@
                             value = thisDate.toISOString();
                         }
                         if ((encryptField && !gStratusFormsDecryptFailed) || !encryptField) {
-                            StratusFormsValuePairs.push([$(this).attr("listFieldName"), value]);
+                            StratusFormsValuePairs.push([$(this).attr("listFieldName"), CDataWrap(value)]);
                         }
                     }
                 }
@@ -651,7 +786,12 @@
 			}
         
             id = this.id;
-            value = $(this).find("option:selected").text();
+            value = ""; //$(this).find("option:selected").text();
+             $(this).find(":selected").each(function(i, selected){
+                if(value != "")value += ";#";
+
+                value += $(selected).text();
+            });
             formDataString += "" + id + ":\"" + value + "\",";
 
             formVal = $(this).attr("listFieldName");
@@ -662,19 +802,22 @@
 	        	}
 	        	else
 	        	{
-                	StratusFormsValuePairs.push([$(this).attr("listFieldName"), value]);
+                	StratusFormsValuePairs.push([$(this).attr("listFieldName"), CDataWrap(value)]);
                 }
             }
         });
         $(formElement).find("textarea").each(function () {
             id = this.id;
+            var attr = $(this).attr('data-StratusFormsType');
+            if (typeof attr !== typeof undefined && attr !== false && attr == "Signature") {
+                $(this).val(GetSigatureAsString($(this).attr("id")+'canvas'));
+            }            
             value = $(this).val();
             if ($(this).hasClass("trumbowyg-textarea"))
             {
             	id = $(this).attr("name");
             	value = $("#"+id).html();
             }
-
 
             var encryptField = $(this).hasClass(gStratusFormsEncryptClass);
             encodedValue = htmlEncode(value, encryptField);
@@ -715,9 +858,9 @@
                     value = ($(this).html()).replace(regex, "'");
 
                     formDataString += "" + this.id + ":\"" + value + "\",";
-                    //alert($(this).attr("listFieldName")+ "---" +CDataWrap($(this).html()));
+                    //alert($(this).attr("listFieldName")+ "---" +($(this).html()));
                     if ($(this).attr("listFieldName") != undefined) {
-                        StratusFormsValuePairs.push([$(this).attr("listFieldName"), CDataWrap($(this).html())]);
+                        StratusFormsValuePairs.push([$(this).attr("listFieldName"), CDataWrap($(this).html()) ]);
                     }
                 }
             //}
@@ -725,9 +868,23 @@
 
         return formDataString;
     }
+
+    function DrawSignature(signatureData,canvasID)
+	{
+		var myCanvas = document.getElementById(canvasID);
+		var ctx = myCanvas.getContext('2d');
+		var img = new Image;
+		img.src = signatureData ;
+		setTimeout(function(){ctx.drawImage(img,0,0);},500);
+	}
+    function GetSigatureAsString(canvasID)
+	{
+		var canvas = document.getElementById(canvasID);
+        return canvas.toDataURL();
+    
+	}	
     
     function htmlEncode(str, encode) {
-
         if (encode && gStratusFormsDecryptFailed) {
             return str;
         }
@@ -834,13 +991,13 @@
 
         formDataString = EncryptForm(formDataString);
 
-        StratusFormsValuePairs.push([StratusFormsDataField, CDataWrap(formDataString)]);
+        StratusFormsValuePairs.push([StratusFormsDataField, (formDataString)]);
 
 		if (formID == null)
 		{
 			formID = gStratusFormsFormID;
 		}
-        $().StratusFormsSaveForm(listName, formID, StratusFormsValuePairs, saveCompleteFunc,gStratusFormsChildListData);
+        $().StratusFormsSaveForm(listName, formID, StratusFormsValuePairs, saveCompleteFunc,gStratusFormsChildListData, gStratusFormsFiles);
     }
 
 

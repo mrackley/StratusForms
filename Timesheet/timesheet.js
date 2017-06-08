@@ -20,22 +20,11 @@ ExecuteOrDelayUntilScriptLoaded(Init,"SP.js");
 	            changeYear: true
         });
 
-		//helper function to load a drop downlist
-		//assumes there is a list called "States"	     
-//	     $("#projects").StratusFormsLoadDDL ({
-//			listName: "Projects",	
-//			firstOptionText: "Select Project",
-//			fieldName: "Title"
-//		});
-
 
 		$("div.ms-cui-tabContainer").hide();
-		
-		
 
 	 }
 	 
-
 	function SubmitForm()
 	{
 		//When the form is submitted store it to the specified list
@@ -68,15 +57,4 @@ ExecuteOrDelayUntilScriptLoaded(Init,"SP.js");
 		SumHours();
 	}
 	
-	$.fn.StratusFormsDecrypt = function(formString,key)
- {
- 	     result = CryptoJS.AES.decrypt(formString, key).toString(CryptoJS.enc.Utf8);
-	 	     return result;
-	 }
-	 $.fn. StratusFormsEncrypt = function(formString,key)
-	 {
-	      result = CryptoJS.AES.encrypt(formString, key);
-	 	     return result;
-	 }
-
 	
