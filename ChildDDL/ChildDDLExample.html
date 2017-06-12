@@ -1,0 +1,39 @@
+﻿
+<div id="timesheetDiv" class="contact">
+	<h1>timesheet entry</h1>
+		<fieldset>
+			<label class="thisLabel" for="name" >Employee:</label>
+			<div id="employee" data-StratusFormsType="PeoplePicker"></div>
+
+			<label class="thisLabel" for="date" >Week Ending:</label>
+			<input class="inputClass" id="weekEnding" isDate="yes" validate="validDate" placeholder="Enter Week Ending Date" />
+
+			<center>
+			<table>
+			
+			<tr><td>Project</td><td>Mon</td><td>Tues</td><td>Wed</td><td>Thur</td><td>Fri</td><td></tr>
+			<!-- the row below is the "container" of repeating content.  A repeating content container
+			     needs to have a uniquie ide and the attricute 'data-StratusFormsRepeatable="Y"' 
+				 all fields in that containser (row, div, cell, etc) will be repeated -->
+			<tr id="repeatingRow" data-StratusFormsRepeatable="Y" >
+				<td><select id="projects" onchange="DoChildDDL(this.value);" class="inputSelectSmall" data-StratusFormsLookup="{listName:'Projects',firstOption:'Select Project',fieldName:'Title'}"></select></td>				
+				<td><select class="inputSelectSmall" id="subProject" ></select></td>
+				<td><input class="inputClassSmall hours" id="mon" validate="validNumber" /></td>
+				<td><input class="inputClassSmall hours" id="tues" /></td>
+				<td><input class="inputClassSmall hours" id="wed" /></td>
+				<td><input class="inputClassSmall hours" id="thurs" /></td>
+				<td><input class="inputClassSmall hours" id="fri" /></td>
+			</tr>
+			<tr>
+				<!-- the below anchor is what triggers the creating of another row. The function StratusFormsRepeat
+				     takes one parameter, the ID of the container to trigger the creating of the repeated content -->
+				<td colspan="6"><a href="#" onclick="$().StratusFormsRepeat('repeatingRow');">Add Row</a></td>
+			</tr>
+				
+			</table>
+			</center>
+			
+			<input class="buttonClass" type="button" onclick="SubmitForm();" value="Add/Update Time Entry" />
+			
+		</fieldset>
+</div>
