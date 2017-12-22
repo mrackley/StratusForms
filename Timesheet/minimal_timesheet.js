@@ -3,7 +3,7 @@
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.10.0/jquery-ui.min.js"></script> 
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.SPServices/0.7.2/jquery.SPServices-0.7.2.min.js"></script> 
 
-<script type="text/javascript" src="../SiteAssets/stratus-forms-1.4.js?rev=3"></script>
+<script type="text/javascript" src="../SiteAssets/stratus-forms-1.5.js?rev=3"></script>
 <script type="text/javascript" src="../SiteAssets/stratus-forms-data-SPServices-1.4.js"></script>
 
 <link  type="text/css" rel="stylesheet" href="../SiteAssets/TimeSheet/timesheet.css" /> 
