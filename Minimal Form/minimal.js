@@ -1,28 +1,34 @@
-﻿	$(document).ready(function() {
-	     
-	     //Initialization function. Tells SF which Query String Variable
-	     //has the ID of the form, and the name of the list to read data from
-	     $("#minimal").StratusFormsInitialize({
-	     	queryStringVar: "formID",
-	     	listName: "minimal",
-	     	completefunc: function() { 
-			}
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script> 
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.SPServices/0.7.2/jquery.SPServices-0.7.2.min.js"></script> 
 
-	     });
-	});
-	     
-	function SubmitForm()
-	{
-		//When the form is submitted store it to the specified list
-		//also passes in the x and y offset of error messages for elements
-		//this allows you to change their location in reference to the form field
-		$("#minimal").StratusFormsSubmit({
-	     	listName: "minimal",
-	     	errorOffsetTop: 10,
-	     	errorOffsetLeft: 5,
-            completefunc: function(id) { 
-				alert("Save was successful. ID = " + id);
-				window.location = window.location.pathname + "?formID=" + id; 
-			}
-	     });
+<script type="text/javascript" src="../SiteAssets/stratus-forms-1.5.js"></script>
+<script type="text/javascript" src="../SiteAssets/stratus-forms-data-SPServices-1.4.js"></script>
+
+<div id="SFForm">
+</div>
+
+<script type="text/javascript">
+
+	$(document).ready(function() {
+		$("#SFForm").StratusFormsInitialize({
+	          htmlForm: "../SiteAssets/Minimal Form/minimal.html",
+		  queryStringVar: "formID",
+	          listName: "minimal",
+	          completefunc: function()
+	          {
+	          }
+		});
 	}
+
+	function SubmitForm()
+	{		
+		$("#SFForm").StratusFormsSubmit({
+	     	listName: "minimal",
+        	completefunc: function(id) { 
+  				alert("Save was successful. ID = " + id);
+	  			window.location = window.location.pathname + "?formID=" + id; 
+			}
+    		});
+	}
+
+</script>
