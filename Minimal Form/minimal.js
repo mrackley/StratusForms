@@ -11,14 +11,14 @@
 
 	$(document).ready(function() {
 		$("#SFForm").StratusFormsInitialize({
-	          htmlForm: "../SiteAssets/Minimal Form/minimal.html",
+	          htmlForm: "../SiteAssets/Minimal%20Form/minimal.html",
 		  queryStringVar: "formID",
 	          listName: "minimal",
 	          completefunc: function()
 	          {
 	          }
 		});
-	}
+	});
 
 	function SubmitForm()
 	{		
