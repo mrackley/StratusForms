@@ -12,6 +12,7 @@
 <script type="text/javascript" src="/_layouts/15/clientforms.js" ></script> 
 <script type="text/javascript" src="/_layouts/15/clientpeoplepicker.js" ></script> 
 <script type="text/javascript" src="/_layouts/15/autofill.js" ></script> 
+<script type="text/javascript" src="/_layouts/15/clienttemplates.js" ></script> 
 <!----------------------------------------------------------------------------------------------------->
 
 <div id="SFForm">
