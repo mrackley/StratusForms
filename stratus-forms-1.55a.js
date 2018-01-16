@@ -1,7 +1,7 @@
 /*
 /*
  * StratusForms - Store HTML forms in SharePoint lists using jQuery
- * Version 1.5
+ * Version 1.55(alpha)
  * @requires jQuery v1.4.2 or greater - jQuery 1.10+ recommended
  * 
  *
@@ -30,6 +30,11 @@
     var gStratusFormsDebug = false;
     var gStratusFormsFiles = new Array();
     var gStratusFormsFormData = {};
+    var gStratusFormsCurrentUserInfo = {Title:""};
+    var gStratusFormsComment = "SFComment";
+    var gStratusFormsCommentCreator = "SFCommentCreator";
+    var gStratusFormsCommentCreated = "SFCommentCreated";
+    
     
     $.fn.StratusFormsLight = function (options)
     {
@@ -69,6 +74,7 @@
             }
 
     };
+    
 
 $.fn.StratusFormsTranslate = function (options)
     {
@@ -147,6 +153,12 @@ $.fn.StratusFormsTranslate = function (options)
                 }
                 //store in global var for save
                 gStratusFormsFormID = listID;
+
+                $("div[data-StratusFormsType='Comments']").each(function () {
+                    eval("var commentOptions =" + $(this).attr("data-StratusFormsOptions"));
+                    $(this).append("<textarea class='SFDontSave "+commentOptions.class+"' rows='"+commentOptions.rows+"' cols='"+commentOptions.cols+"'></textarea>");
+                }); 
+
                 
                 if (listID != undefined) {
 
@@ -171,7 +183,8 @@ $.fn.StratusFormsTranslate = function (options)
                    });
                     
                 } else {
-                    
+
+                   
                     $("div[data-StratusFormsType='PeoplePicker']").each(function () {
                         $(this).StratusFormsPeoplePicker();
                     });
@@ -205,6 +218,7 @@ $.fn.StratusFormsTranslate = function (options)
                     }                    
                 }
 
+
                 $("div[data-StratusFormsType='File'").each(function () {
                     $(this).StratusFileHandler ();
 
@@ -216,6 +230,15 @@ $.fn.StratusFormsTranslate = function (options)
             });
         }
 
+    var getUserInfo = $().StratusFormsGetUserInfo();
+        getUserInfo.done(function (userInfo) {
+            gStratusFormsCurrentUserInfo = userInfo;
+            delete gStratusFormsCurrentUserInfo.__metadata;
+            delete gStratusFormsCurrentUserInfo.Alerts;
+	    });
+        getUserInfo.fail(function () {
+            
+        });
 
     };
 
@@ -756,6 +779,17 @@ $.fn.StratusFormsTranslate = function (options)
                         var people = htmlDecode(value).split(";#");
                         $(element).StratusFormsPeoplePicker({ people: people });
                     }
+                }
+                
+                else if ($(element).attr("data-StratusFormsType") != undefined && $(element).attr("data-StratusFormsType") == "Comments") {
+	                eval("var commentOptions =" + $(element).attr("data-StratusFormsOptions"));
+                    var comments = formData[field];
+                    for (var index in comments)
+                    {
+                        $(element).find("textarea").before("<div>'<span class='"+gStratusFormsComment+"'>"+ comments[index].comment +
+                            "</span>'<span class='" +gStratusFormsCommentCreator+"' data-StratusFormsUser='"+JSON.stringify(comments[index].creatorObject)+"'>"+ comments[index].creator +" </span>"+
+                            "<span class='"+gStratusFormsCommentCreated+"'> "+ comments[index].created + " </span></div>");
+                    }
 
                 } else {
                     $(element).html(htmlDecode(value));
@@ -878,7 +912,7 @@ $.fn.StratusFormsTranslate = function (options)
                 }
             }
         });
-        $(formElement).find("textarea").each(function () {
+        $(formElement).find("textarea").not(".SFDontSave").each(function () {
             var id = this.id.split("0sfrepeat0")[0];
             var attr = $(this).attr('data-StratusFormsType');
             if (typeof attr !== typeof undefined && attr !== false && attr == "Signature") {
@@ -921,6 +955,43 @@ $.fn.StratusFormsTranslate = function (options)
                 StratusFormsValuePairs.push([$(this).attr("listFieldName"), listFieldValue]);
             }
             formDataObject[this.id] = emails;
+        });
+        //get the comments
+        $(formElement).find("div[data-StratusFormsType='Comments']").each(function () {
+
+            eval("var commentOptions =" + $(this).attr("data-StratusFormsOptions"));
+
+            var comments = [];
+
+            var date = new Date();
+            var hours = date.getHours();
+            var minutes = date.getMinutes();
+            var ampm = hours >= 12 ? 'pm' : 'am';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            minutes = minutes < 10 ? '0'+minutes : minutes;
+            var strTime = hours + ':' + minutes + ' ' + ampm;
+            
+            $(this).find("span."+gStratusFormsComment).each(function()
+            {
+                eval("var SFUser =" + $(this).next("span."+gStratusFormsCommentCreator).attr("data-StratusFormsUser"));
+                comments.push({
+                    comment: $(this).text(),
+                    creator: $(this).next("span."+gStratusFormsCommentCreator).text(),
+                    created: $(this).next("span."+gStratusFormsCommentCreator).next("span."+gStratusFormsCommentCreated).text(),
+                    creatorObject: SFUser
+                });            
+            });
+
+
+            comments.push({
+                    comment: $(this).find("textarea").val(),
+                    creator: gStratusFormsCurrentUserInfo.Title,
+                    created: date.getMonth()+1 + "/" + date.getDate() + "/" + date.getFullYear() + "  " + strTime,
+                    creatorObject: gStratusFormsCurrentUserInfo
+                });
+
+            formDataObject[this.id] = comments;
         });
 
 
