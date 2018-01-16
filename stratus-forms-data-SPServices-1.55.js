@@ -1,7 +1,7 @@
 /*
 /*
  * StratusForms Public SharePoint Data Layer - Store HTML forms in SharePoint lists using jQuery
- * Version 1.4
+ * Version 1.55 (alpha) 
  * @requires jQuery v1.4.2 or greater - jQuery 1.7+ recommended
  * @requires SPServices 
  * @requires StratusForms http://www.stratusforms.com
@@ -432,7 +432,7 @@ $.fn.StratusFormsGetChild = function (parentList, parentID, childObject) {
             $(xData.responseXML).SPFilterNode("z:row").each(function () {
                 id = $(this).attr("ows_ID");
             });
-            $().StratusFormsSaveForm(childObject.list,id,childObject.valuePairs,null,new Array());
+            $().StratusFormsSaveForm(childObject.list,id,childObject.valuePairs,null,new Array(),new Array());
 
         }
     });
@@ -578,13 +578,14 @@ $.fn.StratusFormsAddCurrentUserToPeoplePicker = function (userid) {
 
 };
 
-function GetUserEmail(emailOrID,name)
-{
+
+$.fn.StratusFormsGetUserInfo = function (userid) {
        var defer = $.Deferred();
        
-        if ($.isNumeric(emailOrID))
-        {
-		    var requestUri = _spPageContextInfo.webAbsoluteUrl + "/_api/web/getuserbyid(" + emailOrID + ")";
+        if (userid == undefined)
+    	    userid = _spPageContextInfo.userId;
+
+		    var requestUri = _spPageContextInfo.webAbsoluteUrl + "/_api/web/getuserbyid(" + userid + ")";
 		
 		    var requestHeaders = { "accept": "application/json;odata=verbose" };
 		
@@ -597,22 +598,17 @@ function GetUserEmail(emailOrID,name)
 		    });
 		
 		    function onSuccess(data, request) {
-		        defer.resolve(data.d.Email,name);
+		        defer.resolve(data.d);
 		    }
 		
 		    function onError(error) {
 		        defer.resolve(null);
 		    }
-        }
-        else
-        {
-	        defer.resolve(emailOrID,name);
+
+        	return defer.promise();
 
         }
         
-    	return defer.promise();
-}
-
 $.fn.StratusFormsGetPeopleFromPeoplePicker = function (element) {
     var spPP = SPClientPeoplePicker.SPClientPeoplePickerDict[$(element).attr("id") + "_TopSpan"];
 
@@ -682,6 +678,40 @@ $.fn.StratusFormsPeoplePicker = function (options) {
     }
 };
 
+function GetUserEmail(emailOrID,name)
+{
+       var defer = $.Deferred();
+       
+        if ($.isNumeric(emailOrID))
+        {
+		    var requestUri = _spPageContextInfo.webAbsoluteUrl + "/_api/web/getuserbyid(" + emailOrID + ")";
+		
+		    var requestHeaders = { "accept": "application/json;odata=verbose" };
+		
+		    $.ajax({
+		        url: requestUri,
+		        contentType: "application/json;odata=verbose",
+		        headers: requestHeaders,
+		        success: onSuccess,
+		        error: onError
+		    });
+		
+		    function onSuccess(data, request) {
+		        defer.resolve(data.d.Email,name);
+		    }
+		
+		    function onError(error) {
+		        defer.resolve(null);
+		    }
+        }
+        else
+        {
+	        defer.resolve(emailOrID,name);
+
+        }
+        
+    	return defer.promise();
+}
 
 $.fn.StratusFormsUploadFile =  function (file,libraryName,id,fieldName) {
 
