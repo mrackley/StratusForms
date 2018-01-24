@@ -696,14 +696,17 @@ $.fn.StratusFormsTranslate = function (options)
                 var repeatableArray = formData[field];
                 var repeatNum = 0;
                 for (var index in repeatableArray) {
-
                     if (repeatableArray[index].StratusFormsParent != "undefined") {
                         $().StratusFormsRepeat(repeatableArray[index].StratusFormsParent);
                     }
                     var thisRepeatableForm = $(form).find("#" + repeatableArray[index].ID);
                     PopulateFormData(thisRepeatableForm, repeatableArray[index],{},repeatNum);
                     repeatNum++;
+                    if (typeof repeatableArray[index].StratusFormsParent === "undefined" ) {
+                                repeatNum = 1;
+                    }
                 }
+		    
             }
 
             else if ($(element).is("select")) {
