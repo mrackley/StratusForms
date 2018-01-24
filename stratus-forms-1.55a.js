@@ -532,14 +532,16 @@ $.fn.StratusFormsTranslate = function (options)
         jQuery(this).attr("id",jQuery(this).attr("id")+ "0sfrepeat0" + repeatNum);
 
         }).removeClass("SFDontSave");
-        
+	    
         $("#" + containerID + "StratusForms" + repeatNum).find('div').each(function () {
             
-			if ($(this).attr("data-StratusFormsType") != undefined && $(this).attr("data-StratusFormsType") == "PeoplePicker") {
+		if ($(this).attr("data-StratusFormsType") != undefined && $(this).attr("data-StratusFormsType") == "PeoplePicker") {
 	        	$(this).empty();
-				$(this).attr("id",$(this).attr("id") + repeatNum);
-				$(this).StratusFormsPeoplePicker();
-	       	}
+			$(this).attr("id",$(this).attr("id") + repeatNum);
+			$(this).StratusFormsPeoplePicker();
+	       	} else {
+                        $(this).attr("id",$(this).attr("id") + repeatNum);
+		}
 
         }).removeClass("SFDontSave");
 
