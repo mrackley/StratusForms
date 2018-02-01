@@ -849,7 +849,7 @@ $.fn.StratusFormsTranslate = function (options)
                 if (type == undefined) {
                     type = "text";
                 }
-                if (value != undefined && value.length > 0 && type.toUpperCase() != "BUTTON") {
+                if (value != undefined && type.toUpperCase() != "BUTTON") {
                     formVal = formVal = $(this).attr("listFieldName");
                     if ((type.toUpperCase() != "RADIO" && type.toUpperCase() != "CHECKBOX")) {
                         formDataObject[id] = encodedValue;
