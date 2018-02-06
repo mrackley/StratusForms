@@ -154,13 +154,12 @@ $.fn.StratusFormsTranslate = function (options)
                 //store in global var for save
                 gStratusFormsFormID = listID;
 
-                $("div[data-StratusFormsType='Comments']").each(function () {
-                    eval("var commentOptions =" + $(this).attr("data-StratusFormsOptions"));
-                    $(this).append("<textarea class='SFDontSave "+commentOptions.class+"' rows='"+commentOptions.rows+"' cols='"+commentOptions.cols+"'></textarea>");
-                }); 
-
-                
                 if (listID != undefined) {
+
+                    $("div[data-StratusFormsType='Log']").each(function () {
+                        eval("var commentOptions =" + $(this).attr("data-StratusFormsOptions"));
+                        $(this).StratusFormsGetLogEntries(commentOptions);
+                    }); 
 
                     var listFieldsArray = new Array();
                     $(this).find("[ListFieldName]").each(function()
@@ -785,18 +784,7 @@ $.fn.StratusFormsTranslate = function (options)
                         $(element).StratusFormsPeoplePicker({ people: people });
                     }
                 }
-                
-                else if ($(element).attr("data-StratusFormsType") != undefined && $(element).attr("data-StratusFormsType") == "Comments") {
-	                eval("var commentOptions =" + $(element).attr("data-StratusFormsOptions"));
-                    var comments = formData[field];
-                    for (var index in comments)
-                    {
-                        $(element).find("textarea").before("<div>'<span class='"+gStratusFormsComment+"'>"+ comments[index].comment +
-                            "</span>'<span class='" +gStratusFormsCommentCreator+"' data-StratusFormsUser='"+JSON.stringify(comments[index].creatorObject)+"'>"+ comments[index].creator +" </span>"+
-                            "<span class='"+gStratusFormsCommentCreated+"'> "+ comments[index].created + " </span></div>");
-                    }
-
-                } else {
+                else {
                     $(element).html(htmlDecode(value));
                 }
             }
@@ -961,44 +949,6 @@ $.fn.StratusFormsTranslate = function (options)
             }
             formDataObject[this.id] = emails;
         });
-        //get the comments
-        $(formElement).find("div[data-StratusFormsType='Comments']").each(function () {
-
-            eval("var commentOptions =" + $(this).attr("data-StratusFormsOptions"));
-
-            var comments = [];
-
-            var date = new Date();
-            var hours = date.getHours();
-            var minutes = date.getMinutes();
-            var ampm = hours >= 12 ? 'pm' : 'am';
-            hours = hours % 12;
-            hours = hours ? hours : 12; // the hour '0' should be '12'
-            minutes = minutes < 10 ? '0'+minutes : minutes;
-            var strTime = hours + ':' + minutes + ' ' + ampm;
-            
-            $(this).find("span."+gStratusFormsComment).each(function()
-            {
-                eval("var SFUser =" + $(this).next("span."+gStratusFormsCommentCreator).attr("data-StratusFormsUser"));
-                comments.push({
-                    comment: $(this).text(),
-                    creator: $(this).next("span."+gStratusFormsCommentCreator).text(),
-                    created: $(this).next("span."+gStratusFormsCommentCreator).next("span."+gStratusFormsCommentCreated).text(),
-                    creatorObject: SFUser
-                });            
-            });
-
-
-            comments.push({
-                    comment: $(this).find("textarea").val(),
-                    creator: gStratusFormsCurrentUserInfo.Title,
-                    created: date.getMonth()+1 + "/" + date.getDate() + "/" + date.getFullYear() + "  " + strTime,
-                    creatorObject: gStratusFormsCurrentUserInfo
-                });
-
-            formDataObject[this.id] = comments;
-        });
-
 
         $(formElement).find("span[listFieldName],label[listFieldName]").each(function () {
                 if ($.trim($(this).html()).length > 0) {
@@ -1139,6 +1089,47 @@ $.fn.StratusFormsTranslate = function (options)
 			formID = gStratusFormsFormID;
 		}
         $().StratusFormsSaveForm(listName, formID, StratusFormsValuePairs, saveCompleteFunc,gStratusFormsChildListData, gStratusFormsFiles);
+    }
+
+
+    $.fn.StratusFormsCreateLogEntry = function (options) {
+        var opt = $.extend({}, {
+            listName: "Comments",
+            category: "Category",
+            categoryField: "Category",
+            entryField: "Comment"
+        }, options);
+        
+        $().StratusFormsDataCreateLogEntry(gStratusFormsFormID,opt.listName,opt.category,opt.categoryField,opt.entryField,this,opt.commentDivID,$().StratusFormsLogEntryCreated);
+    }
+
+    $.fn.StratusFormsLogEntryCreated = function (data,entryField,element,div) {
+        var thisDate = new Date(data.Created);
+        value = (thisDate.getMonth() + 1) + "/" + thisDate.getDate() + "/" + thisDate.getFullYear() + " " + thisDate.getHours() + ":" + thisDate.getMinutes();
+        if (div != undefined)
+            $("#" + div).append('<div class="SFComment">"'+data[entryField]+'" '+gStratusFormsCurrentUserInfo.Title+' ' + value + '</div>');
+        $(element).val("");
+    }
+
+    $.fn.StratusFormsGetLogEntries = function (options) {
+        var opt = $.extend({}, {
+            listName: "Comments",
+            category: "Category",
+            categoryField: "Category",
+            entryField: "Comment"
+        }, options);
+        
+        if (gStratusFormsFormID != 0)
+            $().StratusFormsDataGetLogEntries(gStratusFormsFormID,opt.listName,opt.category,opt.categoryField,opt.entryField,this,$().StratusFormsLogEntriesRetrieved);
+    }
+
+    $.fn.StratusFormsLogEntriesRetrieved = function (data,entryField,element) {
+        for (var index in data.value)
+        {
+            var thisDate = new Date(data.value[index].Created);
+            value = (thisDate.getMonth() + 1) + "/" + thisDate.getDate() + "/" + thisDate.getFullYear() + " " + thisDate.getHours() + ":" + thisDate.getMinutes();
+            $(element).append('<div class="SFComment">"'+data.value[index][entryField]+'" '+data.value[index].Author.Title+' ' + value + '</div>');
+        }
     }
 
 
