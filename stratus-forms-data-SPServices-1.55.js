@@ -857,11 +857,13 @@ $.fn.StratusFormsDataGetLogEntries = function(ID,listName,category,categoryField
     		alert("Error retrieving log entries: " + errorThrown);
     	});
 }
-$.fn.StratusFormsDataCreateLogEntry = function(ID,listName,category,categoryField,entryField,element,div,completeFunc)
+$.fn.StratusFormsDataCreateLogEntry = function(ID,listName,category,categoryField,entryField,element,div,completeFunc,entry)
 {
     var createData = {}
     createData[categoryField] = category;
-    createData[entryField] = $(element).val();
+    createData[entryField] = entry;
+    if ($(element).length)
+        createData[entryField] = $(element).val();
     createData["StratusFormsFormId"] = ID;
 
   var call = jQuery.ajax({
