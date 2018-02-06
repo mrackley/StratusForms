@@ -1,12 +1,12 @@
 /*
 /*
  * StratusForms Public SharePoint Data Layer - Store HTML forms in SharePoint lists using jQuery
- * Version 1.55 (alpha) 
+ * Version 1.55a 
  * @requires jQuery v1.4.2 or greater - jQuery 1.7+ recommended
  * @requires SPServices 
  * @requires StratusForms http://www.stratusforms.com
  *
- * Copyright (c) 2013-2017 Mark Rackley
+ * Copyright (c) 2013-2018 Mark Rackley
  * Examples and coming soon.
   * This work is licensed under a Creative Commons Attribution-NonCommercial 3.0 Unported License. 
  * http://creativecommons.org/licenses/by-nc/3.0/
@@ -832,4 +832,58 @@ $.fn.StratusFormsLoadFiles = function (libraryName, fieldName, id, ul) {
         }
     });
 }
+
+$.fn.StratusFormsDataGetLogEntries = function(ID,listName,category,categoryField,entryField,element,completeFunc)
+{
+    var call = $.ajax({
+    		url: _spPageContextInfo.webAbsoluteUrl + "/_api/Web/Lists/GetByTitle('"+
+                listName +"')/items?$select=Id,Author/Title,Created,"+ entryField +"&$expand=Author&$filter=(StratusFormsFormId eq "+ ID +" and "+ categoryField +" eq '"+ category+"')&$orderby=Created",
+    		type: "GET",
+    		dataType: "json",
+    		headers: {
+    			Accept: "application/json;odata=nometadata"
+    		}
+   	
+    	});
+    	call.done(function (data,textStatus, jqXHR){
+            if(completeFunc != undefined)
+            {
+                completeFunc(data,entryField,element);
+            }
+				
+    	});
+    	
+    	call.fail(function (jqXHR,textStatus,errorThrown){
+    		alert("Error retrieving log entries: " + errorThrown);
+    	});
+}
+$.fn.StratusFormsDataCreateLogEntry = function(ID,listName,category,categoryField,entryField,element,div,completeFunc)
+{
+    var createData = {}
+    createData[categoryField] = category;
+    createData[entryField] = $(element).val();
+    createData["StratusFormsFormId"] = ID;
+
+  var call = jQuery.ajax({
+    url: _spPageContextInfo.webAbsoluteUrl + "/_api/Web/Lists/GetByTitle('"+ listName +"')/items",
+    type: "POST",
+    data: JSON.stringify(createData),
+    headers: {
+        Accept: "application/json;odata=nometadata",
+        "Content-Type": "application/json;odata=nometadata",
+        "X-RequestDigest": jQuery("#__REQUESTDIGEST").val()
+        
+    }
+  });
+    call.done(function (data,textStatus, jqXHR){
+        if(completeFunc != undefined)
+        {
+            completeFunc(data,entryField,element,div);
+        }
+    });
+    call.fail(function (jqHXR,textStatus,errorThrown){
+    		alert("Error creating log entry: " + errorThrown);
+    });
+}
+
 
