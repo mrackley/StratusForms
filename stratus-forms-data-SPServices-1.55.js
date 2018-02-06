@@ -837,7 +837,7 @@ $.fn.StratusFormsDataGetLogEntries = function(ID,listName,category,categoryField
 {
     var call = $.ajax({
     		url: _spPageContextInfo.webAbsoluteUrl + "/_api/Web/Lists/GetByTitle('"+
-                listName +"')/items?$select=Id,Author/Title,Created,"+ entryField +"&$expand=Author&$filter=(StratusFormsFormId eq "+ ID +" and "+ categoryField +" eq '"+ category+"')&$orderby=Created",
+                listName +"')/items?$select=Id,Author/Title,Created,"+categoryField+","+ entryField +"&$expand=Author&$filter=(StratusFormsFormId eq "+ ID +" and "+ categoryField +" eq '"+ category+"')&$orderby=Created",
     		type: "GET",
     		dataType: "json",
     		headers: {
