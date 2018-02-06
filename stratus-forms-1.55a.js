@@ -31,10 +31,7 @@
     var gStratusFormsFiles = new Array();
     var gStratusFormsFormData = {};
     var gStratusFormsCurrentUserInfo = {Title:""};
-    var gStratusFormsComment = "SFComment";
-    var gStratusFormsCommentCreator = "SFCommentCreator";
-    var gStratusFormsCommentCreated = "SFCommentCreated";
-    
+    var gStratusFormsComment = "SFComment";  
     
     $.fn.StratusFormsLight = function (options)
     {
@@ -1097,18 +1094,20 @@ $.fn.StratusFormsTranslate = function (options)
             listName: "Comments",
             category: "Category",
             categoryField: "Category",
-            entryField: "Comment"
+            entryField: "Comment",
+            entry: ""
         }, options);
         
-        $().StratusFormsDataCreateLogEntry(gStratusFormsFormID,opt.listName,opt.category,opt.categoryField,opt.entryField,this,opt.commentDivID,$().StratusFormsLogEntryCreated);
+        $().StratusFormsDataCreateLogEntry(gStratusFormsFormID,opt.listName,opt.category,opt.categoryField,opt.entryField,this,opt.logDivID,$().StratusFormsLogEntryCreated,opt.entry);
     }
 
     $.fn.StratusFormsLogEntryCreated = function (data,entryField,element,div) {
         var thisDate = new Date(data.Created);
         value = (thisDate.getMonth() + 1) + "/" + thisDate.getDate() + "/" + thisDate.getFullYear() + " " + thisDate.getHours() + ":" + thisDate.getMinutes();
         if (div != undefined)
-            $("#" + div).append('<div class="SFComment">"'+data[entryField]+'" '+gStratusFormsCurrentUserInfo.Title+' ' + value + '</div>');
-        $(element).val("");
+            $("#" + div).append('<div class="'+gStratusFormsComment+'">"'+data[entryField]+'" '+gStratusFormsCurrentUserInfo.Title+' ' + value + '</div>');
+        if (element != undefined)
+            $(element).val("");
     }
 
     $.fn.StratusFormsGetLogEntries = function (options) {
@@ -1128,7 +1127,7 @@ $.fn.StratusFormsTranslate = function (options)
         {
             var thisDate = new Date(data.value[index].Created);
             value = (thisDate.getMonth() + 1) + "/" + thisDate.getDate() + "/" + thisDate.getFullYear() + " " + thisDate.getHours() + ":" + thisDate.getMinutes();
-            $(element).append('<div class="SFComment">"'+data.value[index][entryField]+'" '+data.value[index].Author.Title+' ' + value + '</div>');
+            $(element).append('<div class="'+gStratusFormsComment+'">"'+data.value[index][entryField]+'" '+data.value[index].Author.Title+' ' + value + '</div>');
         }
     }
 
