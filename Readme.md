@@ -6,7 +6,7 @@ Watch the video to get started: https://youtu.be/OIjevmlzCFc
 
 Documentation located at: http://www.stratusforms.com/documentation/
 
-## IMPORTANT NOTICE ABOUT LICENSING 
+## Important note about Licensing 
 
 This work is licensed under a Creative Commons Attribution-NonCommercial 3.0 Unported License. 
          
@@ -18,7 +18,7 @@ All samples are provided as-is with no warranty.
 
 For paid support and other licensing information, please contact info@stratusforms.com
 
-## WHAT'S NEW IN VERSION 1.5
+## What's new in Version 1.5
 
 - A LOT of tweaks and bug fixes
 - the StratusFormsData JSON object now stored so that it is valid for JSON.parse
@@ -26,7 +26,7 @@ For paid support and other licensing information, please contact info@stratusfor
 - The JSON object now retains data stored from forms that may have different fields from the current form being saved
 - several stability tweaks
 
-Stratus Forms for SharePoint Basic Usage:
+## Stratus Forms for SharePoint Basic Usage:
 
 1. Create a list to store form data
 2. Create a field in this list with the name StratusFormsData.  This field *MUST* be a PLAIN TEXT MULTILINE FIELD
