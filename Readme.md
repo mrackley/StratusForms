@@ -6,21 +6,17 @@ Watch the video to get started: https://youtu.be/OIjevmlzCFc
 
 Documentation located at: http://www.stratusforms.com/documentation/
 
-This work is licensed under a Creative Commons Attribution-NonCommercial 3.0 Unported License. 
-
 ## IMPORTANT NOTICE ABOUT LICENSING 
 
-STRATUSFORMS IS FREE UNLESS YOU ARE BUNDLING IT IN A PRODUCT THAT IS TO BE SOLD             
-YOU MAY USE STRATUSFORMS FOR FREE FOR ANY INTERNAL PROJECTS, OR AS A CONSULTANT DOING WORK  
-FOR A CLIENT. SUBMIT ANY QUESTIONS ON LICENSING TO INFO@STRATUSFORMS.COM                    
-
+This work is licensed under a Creative Commons Attribution-NonCommercial 3.0 Unported License. 
+         
 Do you want to use this product for a personal, internal, or non-profit project? 
 Then you can use it for free under the Creative Commons Attribution-NonCommercial 3.0 License. 
 http://creativecommons.org/licenses/by-nc/3.0/
 
 All samples are provided as-is with no warranty.
 
-For paid support please contact info@stratusforms.com
+For paid support and other licensing information, please contact info@stratusforms.com
 
 ## WHAT'S NEW IN VERSION 1.5
 
