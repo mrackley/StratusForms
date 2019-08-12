@@ -1,0 +1,13 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "stratusformdesigner-client-side-solution",
+    "id": "cf060d19-b275-4652-9f4b-774d1e8f4c2b",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "isDomainIsolated": false
+  },
+  "paths": {
+    "zippedPackage": "solution/stratusformdesigner.sppkg"
+  }
+}
